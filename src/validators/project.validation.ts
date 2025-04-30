@@ -9,7 +9,7 @@ const createProjectSchema = z.object({
 const updateProjectSchema = createProjectSchema.partial();
 
 const addProjectMemberSchema = z.object({
-  email: z.string().trim().email(),
+  email: z.string().trim().email({message:"Email is required"}),
   role: z
     .enum([     
       UserRolesEnum.PROJECT_ADMIN,

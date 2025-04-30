@@ -4,12 +4,16 @@ import { canUserPerformAction, UserCanPerformAction } from "../utils/UserRolePer
 import { NextFunction, Response } from "express";
 import { ActionsEnumType } from "../utils/constants";
 import { asyncHandler } from "../utils/asynHandler";
+import mongoose from "mongoose";
 
 
 export const checkPermission = (action: ActionsEnumType) => {
   return asyncHandler(async (req, res: Response, next: NextFunction) => {
     const user = req.user;
     const projectId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      throw new ApiError("Invalid project ID",400);
+    }
     // now will find the role of the user in the project member table
 
     const userMember = await ProjectMember.findOne({

@@ -27,6 +27,8 @@ export const ActionsEnum = {
   DELETE_ATTACHMENT:"delete_attachment",
   UPDATE_ATTACHMENT:"update_attachment",
   VIEW_PROJECT: "view_project",
+  VIEW_NOTES:"view_notes",
+  VIEW_TASKS:"view_tasks",
   READ_PROJECT:"read_project",
   UPDATE_ROLE:"update_role"
 
@@ -55,7 +57,9 @@ export const RolePermissions: Record<UserRolesEnumType, ActionsEnumType[]> = {
     ActionsEnum.UPDATE_ATTACHMENT,
     ActionsEnum.VIEW_PROJECT,
     ActionsEnum.READ_PROJECT,
-    ActionsEnum.UPDATE_ROLE
+    ActionsEnum.UPDATE_ROLE,
+    ActionsEnum.VIEW_NOTES,
+    ActionsEnum.VIEW_TASKS,
 
     
   ],
@@ -73,7 +77,9 @@ export const RolePermissions: Record<UserRolesEnumType, ActionsEnumType[]> = {
     ActionsEnum.DELETE_ATTACHMENT,
     ActionsEnum.UPDATE_ATTACHMENT,
     ActionsEnum.VIEW_PROJECT,
-    ActionsEnum.READ_PROJECT
+    ActionsEnum.READ_PROJECT,
+    ActionsEnum.VIEW_NOTES,
+    ActionsEnum.VIEW_TASKS,
 
 
   ],
@@ -88,7 +94,9 @@ export const RolePermissions: Record<UserRolesEnumType, ActionsEnumType[]> = {
     ActionsEnum.DELETE_ATTACHMENT,
     ActionsEnum.UPDATE_ATTACHMENT,
     ActionsEnum.VIEW_PROJECT,
-    ActionsEnum.READ_PROJECT
+    ActionsEnum.READ_PROJECT,
+    ActionsEnum.VIEW_NOTES,
+    ActionsEnum.VIEW_TASKS,
   ],
 };
 
@@ -100,3 +108,17 @@ export const TaskStatusEnum = {
 
 export type TaskStatusEnumType = typeof TaskStatusEnum[keyof typeof TaskStatusEnum]  // key ka type deta hai
 export const AvailableTaskStatuses = Object.values(TaskStatusEnum);
+
+
+export const allowedMimeTypes = [
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "text/plain",
+  // docx - word doc
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  // xlsx -  excel sheet
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  // ppt
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+];

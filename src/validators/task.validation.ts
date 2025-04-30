@@ -1,27 +1,35 @@
 import { z } from "zod";
+import { allowedMimeTypes, TaskStatusEnum } from "../utils/constants";
 
 const taskSchema = z.object({
-  title: z.string(),
-  description: z.string().optional(),
-  project:z.obj
+  title: z.string().trim().nonempty("Title field is required"),
+  description: z.string().trim().optional(),
+  email: z.string().trim().email({ message: "Email is required" })
 });
 
-const loginSchema = registerSchema.omit({
-  fullName: true,
-  username: true,
-  avatar: true,
-});
+
+
+const updateTaskSchema = taskSchema
+.extend({
+  status: z.enum(
+    ["TODO", "IN_PROGRESS", "DONE"], 
+    {
+      message: "Status must be either 'todo', 'in_progress' or 'done'",
+    },
+  ),
+})
+.partial();
 
 // types
-type RegisterData = z.infer<typeof registerSchema>;
-type LoginData = z.infer<typeof loginSchema>;
+type TaskData = z.infer<typeof taskSchema>;
+type UpdateTaskData = z.infer<typeof updateTaskSchema>
 
-const validateRegisterData = (data: RegisterData) => {
-  return registerSchema.safeParse(data);
+const validateTaskData = (data: TaskData) => {
+  return taskSchema.safeParse(data);
 };
 
-const validateLoginData = (data: LoginData) => {
-  return loginSchema.safeParse(data);
+const validateUpdateTaskData = (data: UpdateTaskData) => {
+  return updateTaskSchema.safeParse(data);
 };
 
-export { validateRegisterData, validateLoginData };
+export { validateTaskData,validateUpdateTaskData };

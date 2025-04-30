@@ -76,7 +76,7 @@ const register = asyncHandler(async (req, res) => {
 
   if (avatarURL && avatarLocalPath) {
     user.avatar = {
-      url: avatarURL?.url,
+      url: avatarURL?.secure_url,
       localPath: avatarLocalPath,
     };
   }

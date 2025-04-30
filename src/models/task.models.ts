@@ -2,16 +2,20 @@ import mongoose, { Document, Schema } from "mongoose";
 import { AvailableTaskStatuses, TaskStatusEnum } from "../utils/constants";
 import { TaskStatusEnumType } from "../utils/constants";
 
-interface TaskInterface extends Document {
-    title:string,
-    description:string,
-    project:Schema.Types.ObjectId,
-    assignedTo:Schema.Types.ObjectId,
-    assignedBy:Schema.Types.ObjectId,
-    status:TaskStatusEnumType,
-    attachments:[
-      url: String, mimetype: String, size: Number
-    ]
+export interface Attachment {
+  url: string;
+  mimetype: string;
+  size: number;
+}
+
+export interface TaskInterface extends Document {
+  title: string;
+  description: string;
+  project: Schema.Types.ObjectId;
+  assignedTo: Schema.Types.ObjectId;
+  assignedBy: Schema.Types.ObjectId;
+  status: TaskStatusEnumType;
+  attachments: Attachment[];
 }
 
 const taskSchema = new Schema<TaskInterface>(
@@ -20,6 +24,7 @@ const taskSchema = new Schema<TaskInterface>(
       type: String,
       required: true,
       trim: true,
+      unique: true,
     },
     description: {
       type: String,

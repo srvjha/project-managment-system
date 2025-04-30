@@ -16,14 +16,12 @@ const registerSchema = z.object({
     .regex(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{6,}$/, {
       message:
         "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character.",
-    }),
-  avatar: z.string().optional(),
+    })
 });
 
 const loginSchema = registerSchema.omit({
   fullName: true,
-  username: true,
-  avatar: true,
+  username: true
 });
 
 // types

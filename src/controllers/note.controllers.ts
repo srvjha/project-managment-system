@@ -11,50 +11,38 @@ const getNotes = asyncHandler(async (req, res) => {
   const projectId = req.params.id;
   const notes = await ProjectNote.aggregate([
     {
-      $match:{project:new mongoose.Types.ObjectId(projectId)}
+      $match: { project: new mongoose.Types.ObjectId(projectId) },
+    },
+  
+    {
+      $lookup: {
+        from: "users",
+        localField: "createdBy",
+        foreignField: "_id",
+        as: "createdBy",
+      },
     },
     {
-      $lookup:{
-        from:"projects",
-        localField:"project",
-        foreignField:"_id",
-        as:"projectData"
-      }
+      $unwind: "$createdBy",
     },
     {
-      $unwind:"$projectData"
+      $project: {
+        _id: 1,
+        username: "$createdBy.username",
+        email: "$createdBy.email",
+        fullName: "$createdBy.fullName",
+        avatar: "$createdBy.avatar.url",
+        content: 1,
+        updatedAt: 1,
+      },
     },
-    {
-      $lookup:{
-        from:"users",
-        localField:"createdBy",
-        foreignField:"_id",
-        as:"createdBy"
-      }
-    },
-    {
-      $unwind:"$createdBy"
-    },
-    {
-      $project:{
-        _id:1,
-        username:"$createdBy.username",
-        email:"$createdBy.email",
-        fullName:"$createdBy.fullName",
-        avatar:"$createdBy.avatar.url",
-        content:1,
-        updatedAt:1
-      }
-    }
-  ])
-
-  res.status(200).json(
-    new ApiResponse(
-      200,
-      notes,
-      "Notes fetched successfully"
-    )
-  )
+  ]);
+  if(notes.length){
+    throw new ApiError("No Notes available",400)
+  }
+  res
+    .status(200)
+    .json(new ApiResponse(200, notes, "Notes fetched successfully"));
 });
 
 const getNoteById = asyncHandler(async (req, res) => {
@@ -62,7 +50,7 @@ const getNoteById = asyncHandler(async (req, res) => {
 
   const note = await ProjectNote.findById(noteId).populate({
     path: "createdBy",
-    select: "username email fullName avatar -_id"
+    select: "username email fullName avatar -_id",
   });
 
   if (!note) {
@@ -77,14 +65,13 @@ const getNoteById = asyncHandler(async (req, res) => {
     email: createdBy.email,
     fullName: createdBy.fullName,
     avatar: createdBy.avatar,
-    content: note.content
+    content: note.content,
   };
 
-  res.status(200).json(
-    new ApiResponse(200, formattedResult, "Note Fetched Successfully")
-  );
+  res
+    .status(200)
+    .json(new ApiResponse(200, formattedResult, "Note Fetched Successfully"));
 });
-
 
 const createNote = asyncHandler(async (req, res) => {
   const { content } = handleZodError(validateNoteData(req.body));
@@ -107,13 +94,11 @@ const createNote = asyncHandler(async (req, res) => {
 
 const updateNote = asyncHandler(async (req, res) => {
   const { content } = handleZodError(validateNoteData(req.body));
-  const projectId = req.params.id;
-  const userId = req.user._id;
+  const noteId = req.params.noteid;
 
-  const note = await ProjectNote.findOneAndUpdate(
+  const note = await ProjectNote.findByIdAndUpdate(
     {
-      project: projectId,
-      createdBy: userId,
+      noteId,
     },
     { content },
     { new: true },
@@ -125,22 +110,15 @@ const updateNote = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .json(new ApiResponse(200, note, "Notes Updated Successfully"));
+    .json(new ApiResponse(200, note, "Note Updated Successfully"));
 });
 
 const deleteNote = asyncHandler(async (req, res) => {
-  const projectId = req.params.id;
-  const userId = req.user._id; 
+  const noteId = req.params.noteid;
 
- const deletedNote =  await ProjectNote.findOneAndDelete({
-    project: projectId,
-    createdBy: userId,
-  });
-  if (!deletedNote) {
-    throw new ApiError("Note not found or already deleted", 404);
-  }
+  await ProjectNote.findByIdAndDelete(noteId);
 
-  res.status(200).json(new ApiResponse(200, {}, "Notes Deleted Successfully"));
+  res.status(200).json(new ApiResponse(200, {}, "Note Deleted Successfully"));
 });
 
 export { createNote, deleteNote, getNoteById, getNotes, updateNote };
