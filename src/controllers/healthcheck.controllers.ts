@@ -1,10 +1,9 @@
-import { ApiResponse } from "../utils/ApiResponse";
-import { asyncHandler } from "../utils/asynHandler";
+import { Request, Response } from "express";
 
-const healthCheck = asyncHandler(async(req, res) => {
-  console.log("logic to connect with db");
-  
-  res.status(200).json(new ApiResponse(200, {}, "Server is running" ));
-});
+import { ApiResponse } from "../utils/ApiResponse";
+
+const healthCheck = (req: Request, res: Response) => {
+  res.status(200).json(new ApiResponse(200, {}, "Health check passed"));
+};
 
 export { healthCheck };

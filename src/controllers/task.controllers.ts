@@ -1,50 +1,55 @@
-// // get all tasks
-// const getTasks = async (req, res) => {
-//   // get all tasks
-// };
+import { asyncHandler } from "../utils/asynHandler";
 
-// // get task by id
+
+const getTasks = asyncHandler(async (req, res) => {
+  
+});
+
+// get task by id
 // const getTaskById = async (req, res) => {
 //   // get task by id
 // };
 
-// // create task
-// const createTask = async (req, res) => {
-//   // create task
-// };
+//create task
 
-// // update task
+const createTask =asyncHandler(async (req, res) => {
+  // create task
+  const {title,description,project,assignedTo,status,attachments} = req.body
+
+});
+
+// update task
 // const updateTask = async (req, res) => {
 //   // update task
 // };
 
-// // delete task
+// delete task
 // const deleteTask = async (req, res) => {
 //   // delete task
 // };
 
-// // create subtask
+// create subtask
 // const createSubTask = async (req, res) => {
 //   // create subtask
 // };
 
-// // update subtask
+// update subtask
 // const updateSubTask = async (req, res) => {
 //   // update subtask
 // };
 
-// // delete subtask
+// delete subtask
 // const deleteSubTask = async (req, res) => {
 //   // delete subtask
 // };
 
-// export {
-//   createSubTask,
-//   createTask,
-//   deleteSubTask,
-//   deleteTask,
-//   getTaskById,
-//   getTasks,
-//   updateSubTask,
-//   updateTask,
-// };
+export {
+  // createSubTask,
+  // createTask,
+  // deleteSubTask,
+  // deleteTask,
+  // getTaskById,
+  // getTasks,
+  // updateSubTask,
+  // updateTask,
+};

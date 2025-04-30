@@ -15,7 +15,7 @@ const errorHandler = (
     console.log("nhi bhai idhr hu")
     const statusCode = err.statusCode || 500;
     const errorMessage = err.message || "Internal Server Error";
-    customError = new ApiError(statusCode, errorMessage);
+    customError = new ApiError(errorMessage,statusCode);
   }
   res.status(customError.statusCode).json({
     success: customError.success,

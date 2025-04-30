@@ -2,11 +2,11 @@ import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { ApiError } from "../utils/ApiError";
 import { env } from "../validators/env";
-import { AuthRequest } from "../types/express";
 import { asyncHandler } from "../utils/asynHandler";
+import { UserInterface } from "../models/user.models";
 
 export const verifyUser =  asyncHandler(async(
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
@@ -20,7 +20,7 @@ export const verifyUser =  asyncHandler(async(
     console.log("before token")
     const decodedToken = jwt.verify(token, env.ACCESS_TOKEN_SECRET);
     console.log("after token")
-    req.user = decodedToken;
+    req.user = decodedToken as UserInterface;
     next();
   
 })
