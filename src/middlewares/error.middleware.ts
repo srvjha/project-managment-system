@@ -9,10 +9,8 @@ const errorHandler = (
 ) => {
   let customError: ApiError;
   if (err instanceof ApiError) {
-    console.log("idhr hu")
     customError = err;
   } else {
-    console.log("nhi bhai idhr hu")
     const statusCode = err.statusCode || 500;
     const errorMessage = err.message || "Internal Server Error";
     customError = new ApiError(errorMessage,statusCode);

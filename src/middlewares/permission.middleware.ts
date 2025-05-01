@@ -21,13 +21,11 @@ export const checkPermission = (action: ActionsEnumType) => {
       user: user._id,
       project: projectId,
     });
-    console.log("userMember: ",userMember)
     if (!userMember) {
       throw new ApiError("Access Denied", 400);
     }
     try {
       const allowedActions = canUserPerformAction(userMember.role, action);
-      console.log("allowedActions", allowedActions);
       if(!allowedActions) {
         throw new ApiError("Access Denied", 400);
       }

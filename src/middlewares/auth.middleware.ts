@@ -17,9 +17,7 @@ export const verifyUser =  asyncHandler(async(
       throw new ApiError("Unauthorized Request", 400);
     }
     // Verify access token
-    console.log("before token")
     const decodedToken = jwt.verify(token, env.ACCESS_TOKEN_SECRET);
-    console.log("after token")
     req.user = decodedToken as UserInterface;
     next();
   

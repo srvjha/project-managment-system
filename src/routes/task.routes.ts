@@ -61,7 +61,7 @@ router.patch(
 )
 
 router.delete(
-  "/create-subtask/:subtaskId/task/:taskId/project/:projectId",
+  "/create-subtask/:subtaskId/project/:projectId",
   verifyUser,
   checkPermission("delete_subtask"),
   deleteSubTask

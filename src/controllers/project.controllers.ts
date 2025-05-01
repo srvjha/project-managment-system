@@ -68,10 +68,11 @@ const getProjects = asyncHandler(async (req, res) => {
   res.status(200).json(
     new ApiResponse(
       200,
+      projects,
       projects.length
         ? "Projects fetched successfully"
         : "No projects available",
-      "Projects fetched successfully",
+      
     ),
   );
 });
