@@ -14,6 +14,7 @@ import {
   validateUpdateTaskData,
 } from "../validators/task.validation";
 import { SubTask } from "../models/subtask.models";
+import { env } from "../validators/env";
 
 const getTasks = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
@@ -21,74 +22,6 @@ const getTasks = asyncHandler(async (req, res) => {
   const task = await Task.aggregate([
     {
       $match: { project: new mongoose.Types.ObjectId(projectId) },
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "assignedBy",
-        foreignField: "_id",
-        as: "AssignedByData",
-      },
-    },
-    {
-      $unwind: "$AssignedByData",
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "assignedTo",
-        foreignField: "_id",
-        as: "AssignedToData",
-      },
-    },
-    {
-      $unwind: "$AssignedToData",
-    },
-    {
-      $project: {
-        title: 1,
-        description: 1,
-        status: 1,
-        attachments: 1,
-        updatedAt: 1,
-        assignedTo: {
-          username: "$AssignedToData.username",
-          avatar: "$AssignedToData.avatar.url",
-        },
-        assignedBy: {
-          username: "$AssignedByData.username",
-          avatar: "$AssignedByData.avatar.url",
-        },
-      },
-    },
-  ]);
-
-  res
-  .status(200)
-  .json(
-    new ApiResponse(
-      200,
-      task,
-      task.length ? "Task fetched Successfully" : "No Task Available",
-    ),
-  );
-});
-
-// get task by id
-const getTaskById = asyncHandler(async (req, res) => {
-  const { taskId } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(taskId)) {
-    throw new ApiError("Invalid task ID", 400);
-  }
-
-  const existingTask = await Task.findById(taskId);
-  if (!existingTask) {
-    throw new ApiError("Task not found", 404);
-  }
-
-  const task = await Task.aggregate([
-    {
-      $match: { _id: new mongoose.Types.ObjectId(taskId) },
     },
     {
       $lookup: {
@@ -140,6 +73,72 @@ const getTaskById = asyncHandler(async (req, res) => {
         task.length ? "Task fetched Successfully" : "No Task Available",
       ),
     );
+});
+
+// get task by id
+const getTaskById = asyncHandler(async (req, res) => {
+  const { taskId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(taskId)) {
+    throw new ApiError("Invalid task ID", 400);
+  }
+
+  const existingTask = await Task.findById(taskId);
+  if (!existingTask) {
+    throw new ApiError("Task not found", 404);
+  }
+
+  const task = await Task.aggregate([
+    {
+      $match: { _id: new mongoose.Types.ObjectId(taskId) },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "assignedBy",
+        foreignField: "_id",
+        as: "AssignedByData",
+      },
+    },
+    {
+      $unwind: "$AssignedByData",
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "assignedTo",
+        foreignField: "_id",
+        as: "AssignedToData",
+      },
+    },
+    {
+      $unwind: "$AssignedToData",
+    },
+    {
+      $project: {
+        title: 1,
+        description: 1,
+        status: 1,
+        attachments: 1,
+        updatedAt: 1,
+        assignedTo: {
+          username: "$AssignedToData.username",
+          fullName: "$AssignedToData.fullName",
+          avatar: "$AssignedToData.avatar.url",
+        },
+        assignedBy: {
+          username: "$AssignedByData.username",
+          fullName: "$AssignedByData.fullName",
+          avatar: "$AssignedByData.avatar.url",
+        },
+      },
+    },
+  ]);
+
+  if (!task) {
+    throw new ApiError("Task not found", 400);
+  }
+
+  res.status(200).json(new ApiResponse(200, task, "Task fetched Successfully"));
 });
 
 //create task
@@ -290,6 +289,76 @@ const deleteTask = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, null, "Task Deleted Successfully"));
 });
 
+const addAttachments = asyncHandler(async (req, res) => {
+  const { taskId } = req.params;
+  const attachments = req.files as Express.Multer.File[];
+
+  if (!mongoose.Types.ObjectId.isValid(taskId)) {
+    throw new ApiError("Invalid task ID", 400);
+  }
+
+  const task = await Task.findById(taskId);
+  if (!task) {
+    throw new ApiError("Task not found", 400);
+  }
+
+  console.log("task attachments", task.attachments?.length);
+
+  if (!attachments || attachments.length === 0) {
+    throw new ApiError("Please add attachments", 400);
+  }
+
+  const existingAttachments = task.attachments?.length || 0;
+  const newAttachments = attachments.length;
+
+  if (existingAttachments + newAttachments > env.MAX_ATTACHMENTS) {
+    throw new ApiError(
+      `Attachment limit exceeded. You can upload only ${env.MAX_ATTACHMENTS - existingAttachments} more.`,
+      400,
+    );
+  }
+
+  const addAttachmentsOnly = await Promise.all(
+    attachments.map(async (file) => {
+      const result = await uploadOnCloudinary(file.path);
+      return {
+        url: result?.secure_url,
+        mimetype: file.mimetype,
+        size: file.size,
+      };
+    }),
+  );
+
+  task.attachments.push(...(addAttachmentsOnly as Attachment[]));
+
+  await task.save();
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, task.attachments, "Attachments added successfully"),
+    );
+});
+const deleteAttachments = asyncHandler(async (req, res) => {
+  const { aid } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(aid)) {
+    throw new ApiError("Invalid attachment ID", 400);
+  }
+
+  const result = await Task.updateOne(
+    { "attachments._id": aid },
+    { $pull: { attachments: { _id: aid } } },
+  );
+
+  if (result.modifiedCount === 0) {
+    throw new ApiError("Attachment not found", 400);
+  }
+  res
+    .status(200)
+    .json(new ApiResponse(200, null, "Attachment Deleted Successfully"));
+});
+
 // create subtask
 const createSubTask = asyncHandler(async (req, res) => {
   const { title } = handleZodError(validateSubTaskData(req.body));
@@ -401,4 +470,6 @@ export {
   getTasks,
   updateSubTask,
   updateTask,
+  addAttachments,
+  deleteAttachments,
 };

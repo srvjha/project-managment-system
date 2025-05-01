@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from "mongoose";
 import { AvailableTaskStatuses, TaskStatusEnum } from "../utils/constants";
 import { TaskStatusEnumType } from "../utils/constants";
 
-export interface Attachment {
+export interface Attachment extends Document {
   url: string;
   mimetype: string;
   size: number;

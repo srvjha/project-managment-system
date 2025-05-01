@@ -13,7 +13,8 @@ const createEnv = (env: NodeJS.ProcessEnv) => {
     MAILTRAP_SMTP_USER: z.string().nonempty(),
     MAILTRAP_SMTP_PASS: z.string().nonempty(),
     MAIL_FROM: z.string().nonempty(),
-
+    
+    MAX_ATTACHMENTS:z.coerce.number(),
     BASE_URI: z.string(),
 
     ACCESS_TOKEN_SECRET: z.string().nonempty(),

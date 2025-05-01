@@ -30,7 +30,9 @@ export const ActionsEnum = {
   VIEW_NOTES:"view_notes",
   VIEW_TASKS:"view_tasks",
   READ_PROJECT:"read_project",
-  UPDATE_ROLE:"update_role"
+  UPDATE_ROLE:"update_role",
+  ADD_ATTACHMENTS:"add_attachements",
+  DELETE_ATTACHMENTS:"delete_attachements"
 
 
 } as const;
@@ -60,6 +62,8 @@ export const RolePermissions: Record<UserRolesEnumType, ActionsEnumType[]> = {
     ActionsEnum.UPDATE_ROLE,
     ActionsEnum.VIEW_NOTES,
     ActionsEnum.VIEW_TASKS,
+    ActionsEnum.ADD_ATTACHMENTS,
+    ActionsEnum.DELETE_ATTACHMENTS,
 
     
   ],
@@ -80,6 +84,8 @@ export const RolePermissions: Record<UserRolesEnumType, ActionsEnumType[]> = {
     ActionsEnum.READ_PROJECT,
     ActionsEnum.VIEW_NOTES,
     ActionsEnum.VIEW_TASKS,
+    ActionsEnum.ADD_ATTACHMENTS,
+    ActionsEnum.DELETE_ATTACHMENTS,
 
 
   ],
@@ -97,6 +103,8 @@ export const RolePermissions: Record<UserRolesEnumType, ActionsEnumType[]> = {
     ActionsEnum.READ_PROJECT,
     ActionsEnum.VIEW_NOTES,
     ActionsEnum.VIEW_TASKS,
+    ActionsEnum.ADD_ATTACHMENTS,
+    ActionsEnum.DELETE_ATTACHMENTS,
   ],
 };
 
