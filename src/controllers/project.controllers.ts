@@ -68,16 +68,16 @@ const getProjects = asyncHandler(async (req, res) => {
   res.status(200).json(
     new ApiResponse(
       200,
-
-      projects,
-
+      projects.length
+        ? "Projects fetched successfully"
+        : "No projects available",
       "Projects fetched successfully",
     ),
   );
 });
 
 const getProjectById = asyncHandler(async (req, res) => {
-  const projectId = req.params.id;
+  const {projectId} = req.params;
   // const project = await Project.findById(projectId)
   //   .populate({ path: "createdBy", select: "username email -_id" })
   //   .select("name description createdBy updatedAt");
@@ -179,6 +179,8 @@ const createProject = asyncHandler(async (req, res) => {
   console.log("description ", description);
   const createdBy = req.user._id;
 
+
+
   // here want to use transaction
   const clientSession = await mongoose.startSession();
   clientSession.startTransaction();
@@ -208,9 +210,12 @@ const createProject = asyncHandler(async (req, res) => {
       { session: clientSession },
     );
     await clientSession.commitTransaction();
-  } catch (error) {
+  } catch (error:any) {
     await clientSession.abortTransaction();
-    throw new ApiError("Error creating project", 500);
+    if(error.code === 11000){
+      throw new ApiError("Project name must be unique per user",400)
+    }
+    throw new ApiError(`Error while creating user ${error.message}`, 500);
   } finally {
     await clientSession.endSession();
   }
@@ -237,7 +242,7 @@ const updateProject = asyncHandler(async (req, res) => {
     updatePayload.description = description;
   }
   console.log("updatePayload: ", updatePayload);
-  const projectId = req.params.id;
+  const {projectId} = req.params;
   await Project.findByIdAndUpdate(
     {
       _id: projectId,
@@ -253,7 +258,7 @@ const updateProject = asyncHandler(async (req, res) => {
 });
 
 const deleteProject = asyncHandler(async (req, res) => {
-  const projectId = req.params.id;
+  const {projectId} = req.params;
   const clientSession = await mongoose.startSession();
   clientSession.startTransaction();
   try {
@@ -280,7 +285,7 @@ const deleteProject = asyncHandler(async (req, res) => {
 });
 
 const getProjectMembers = asyncHandler(async (req, res) => {
-  const projectId = req.params.id;
+  const {projectId} = req.params;
   const projectMembers = await ProjectMember.find({
     project: projectId,
   })
@@ -314,7 +319,7 @@ const addMemberToProject = asyncHandler(async (req, res) => {
   const { email, role } = handleZodError(
     validateAddProjectMemberData(req.body),
   );
-  const projectId = req.params.id;
+  const {projectId} = req.params;
 
   const user = await User.findOne({ email });
   console.log("user: ", user);
@@ -351,7 +356,7 @@ const addMemberToProject = asyncHandler(async (req, res) => {
 
 const deleteMember = asyncHandler(async (req, res) => {
   const { email } = handleZodError(validateRemoveProjectMemberData(req.body));
-  const projectId = req.params.id;
+  const {projectId} = req.params;
 
   const user = await User.findOne({ email });
 
@@ -372,7 +377,7 @@ const updateMemberRole = asyncHandler(async (req, res) => {
   const { email, role } = handleZodError(
     validateAddProjectMemberData(req.body),
   );
-  const projectId = req.params.id;
+  const {projectId} = req.params;
 
   const user = await User.findOne({ email });
   if (!user) {

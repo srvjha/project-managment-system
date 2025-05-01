@@ -23,8 +23,7 @@ const taskSchema = new Schema<TaskInterface>(
     title: {
       type: String,
       required: true,
-      trim: true,
-      unique: true,
+      trim: true
     },
     description: {
       type: String,

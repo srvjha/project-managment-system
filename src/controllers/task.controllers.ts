@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { BooleanExpression } from "mongoose";
 import { ProjectMember } from "../models/projectmember.models";
 import { Attachment, Task, TaskInterface } from "../models/task.models";
 import { User } from "../models/user.models";
@@ -7,7 +7,8 @@ import { ApiResponse } from "../utils/ApiResponse";
 import { asyncHandler } from "../utils/asynHandler";
 import { uploadOnCloudinary } from "../utils/cloudinary";
 import { handleZodError } from "../utils/handleZodError";
-import { validateTaskData } from "../validators/task.validation";
+import { validateSubTaskData, validateTaskData, validateUpdateSubTaskData, validateUpdateTaskData } from "../validators/task.validation";
+import { SubTask } from "../models/subtask.models";
 
 const getTasks = asyncHandler(async (req, res) => {});
 
@@ -24,10 +25,10 @@ const createTask = asyncHandler(async (req, res) => {
   const { title, description, email } = handleZodError(
     validateTaskData(req.body),
   );
-  const projectId = req.params.id;
+  const {projectId} = req.params;
   const userId = req.user._id;
 
-  const existingTask = await Task.findOne({ title });
+  const existingTask = await Task.findOne({ title,project:projectId });
   if (existingTask) {
     throw new ApiError("Task already Exists", 400);
   }
@@ -76,10 +77,10 @@ const createTask = asyncHandler(async (req, res) => {
 // update task
 const updateTask = asyncHandler(async (req, res) => {
   const { title, description, email, status } = handleZodError(
-    validateTaskData(req.body),
+    validateUpdateTaskData(req.body),
   );
-  const projectId = req.params.id;
-  const taskId = req.params.taskid;
+  console.log("status: ",status)
+  const {projectId,taskId} = req.params;
   if (!mongoose.Types.ObjectId.isValid(taskId)) {
     throw new ApiError("Invalid task ID", 400);
   }
@@ -119,6 +120,8 @@ const updateTask = asyncHandler(async (req, res) => {
     throw new ApiError("At least one field is required to update", 400);
   }
 
+  console.log("updated paylod: ",updatePayload)
+
   const updateTask = await Task.findByIdAndUpdate(taskId, updatePayload, {
     new: true,
   });
@@ -139,12 +142,96 @@ const deleteTask = asyncHandler(async (req, res) => {
 
 // create subtask
 const createSubTask = asyncHandler(async (req, res) => {
-  // create subtask
+  const {title} = handleZodError(validateSubTaskData(req.body))
+  const {taskId,projectId} = req.params;
+  const userId = req.user._id;
+
+  if (!mongoose.Types.ObjectId.isValid(taskId)) {
+    throw new ApiError("Invalid task ID", 400);
+  }
+  
+  const existingTask = await Task.findById(taskId);
+
+  if(!existingTask){
+    throw new ApiError("Task not found",400)
+  }
+  const existingSubtask  = await SubTask.findOne({
+    title,
+    task:taskId,
+    project:projectId
+  })
+
+  if(existingSubtask){
+    throw new ApiError("SubTask with Same Title already exists",400)
+  }
+
+  const subtask = await SubTask.create({
+    title,
+    task:taskId,
+    project:projectId,
+    createdBy:userId
+  })
+
+  if(!subtask){
+    throw new ApiError("Error while creating subtask",400)
+  }
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      subtask,
+      "SubTask Created Successfully"
+    )
+  )
+
 });
 
 // update subtask
 const updateSubTask = asyncHandler(async (req, res) => {
-  // update subtask
+  const {title,isCompleted} = handleZodError(validateUpdateSubTaskData(req.body));
+  const{subtaskId} = req.params;
+  
+  if (!mongoose.Types.ObjectId.isValid(subtaskId)) {
+    throw new ApiError("Invalid subtask ID", 400);
+  }
+  const existingSubtask = await SubTask.findById(subtaskId);
+
+  if(!existingSubtask){
+    throw new ApiError("SubTask not exists",400)
+  }
+
+  const updatePayload:Partial<{
+    title:string,
+    isCompleted:boolean
+  }> = {}
+
+  if(title !== undefined) updatePayload.title = title;
+  if(isCompleted !== undefined) updatePayload.isCompleted = isCompleted
+
+  if (Object.keys(updatePayload).length === 0) {
+    throw new ApiError(
+      "At least one field is required to update",
+      400
+    );
+  }
+
+  const updateSubTask = await SubTask.findByIdAndUpdate(
+    subtaskId,
+    updatePayload,
+    {new:true}
+  ).select("title isCompleted updatedAt")
+
+  if(!updateSubTask){
+    throw new ApiError("Failed to update the subtask",500)
+  }
+
+  res.status(200).json(
+       new ApiResponse(
+        200,
+        updateSubTask,
+        "SubTask updated successfully"
+       )
+  )
 });
 
 // delete subtask

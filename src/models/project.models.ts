@@ -12,7 +12,6 @@ const projectSchema = new Schema<ProjectInterface>(
     name: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
     description: {
@@ -26,5 +25,6 @@ const projectSchema = new Schema<ProjectInterface>(
   },
   { timestamps: true },
 );
-
+// unique project name per user
+projectSchema.index({ name: 1, createdBy: 1 }, { unique: true });
 export const Project = mongoose.model("Project", projectSchema);

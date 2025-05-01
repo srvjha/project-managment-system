@@ -3,6 +3,7 @@ import mongoose, { Schema } from "mongoose";
 interface subTaskSchemaInterface{
     title:string,
     task:Schema.Types.ObjectId,
+    project:Schema.Types.ObjectId,
     isCompleted:boolean,
     createdBy:Schema.Types.ObjectId
 }
@@ -17,6 +18,11 @@ const subtaskSchema = new Schema<subTaskSchemaInterface>({
         ref: "Task",
         required: true
     },
+    project:{
+        type:Schema.Types.ObjectId,
+        ref:"Project",
+        required:true,
+    },
     isCompleted: {
         type: Boolean,
         default: false
@@ -27,5 +33,5 @@ const subtaskSchema = new Schema<subTaskSchemaInterface>({
         required: true
     }
 }, {timestamps: true});
-
+subtaskSchema.index({ title: 1, task: 1,project:1 }, { unique: true });
 export const SubTask = mongoose.model("SubTask", subtaskSchema);

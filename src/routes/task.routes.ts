@@ -2,20 +2,21 @@ import { Router } from "express";
 import { verifyUser } from "../middlewares/auth.middleware";
 import { uploadTaskAttachments } from "../middlewares/multer.middleware";
 import { checkPermission } from "../middlewares/permission.middleware";
-import { createTask, deleteTask, updateTask } from "../controllers/task.controllers";
+import { createSubTask, createTask, deleteSubTask, deleteTask, getTaskById, getTasks, updateSubTask, updateTask } from "../controllers/task.controllers";
 
 const router = Router();
 
+// task routes
 router.post(
-  "/create-task/project/:id",
+  "/create/project/:projectId",
   verifyUser,
   checkPermission("add_task"),
   uploadTaskAttachments,
   createTask,
 );
 
-router.put(
-    "/update-task/:taskid/project/:id",
+router.patch(
+    "/update/:taskId/project/:projectId",
   verifyUser,
   checkPermission("update_task"),
   uploadTaskAttachments,
@@ -23,11 +24,46 @@ router.put(
 )
 
 router.delete(
-  "/delete-task/:taskid/project/:id",
+  "/delete/:taskId/project/:projectId",
   verifyUser,
   checkPermission("delete_task"),
-  uploadTaskAttachments,
   deleteTask,
+)
 
+router.get(
+  "/project/:projectId",
+  verifyUser,
+  checkPermission("view_tasks"),
+  getTasks
+)
+
+router.get(
+  "/:taskId/project/:projectId",
+  verifyUser,
+  checkPermission("view_tasks"),
+  getTaskById
+)
+
+// subtask route
+
+router.post(
+  "/create-subtask/:taskId/project/:projectId",
+  verifyUser,
+  checkPermission("add_subtask"),
+  createSubTask
+)
+
+router.patch(
+  "/update-subtask/:subtaskId/project/:projectId",
+  verifyUser,
+  checkPermission("update_subtask"),
+  updateSubTask
+)
+
+router.delete(
+  "/create-subtask/:subtaskId/task/:taskId/project/:projectId",
+  verifyUser,
+  checkPermission("delete_subtask"),
+  deleteSubTask
 )
 export default router;
