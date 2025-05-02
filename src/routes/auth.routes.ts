@@ -7,14 +7,14 @@ import { verifyUser } from "../middlewares/auth.middleware";
 const router = Router();
 
 router.post("/register",upload.single("avatar"),register)
-router.get("/verify/:token",verifyEmail)
+router.get("/verify/email/:token",verifyEmail)
+router.get("/verify/email/resend",verifyUser,resendEmailVerification)
 router.get("/login",loginUser)
-router.get("/resend-verification",verifyUser,resendEmailVerification)
-router.get("/reset-forgotten-password",verifyUser,resetForgottenPassword)
-router.get("/forgot-password/:token",verifyUser,forgotPasswordRequest)
-router.get("/change-password",verifyUser,changeCurrentPassword)
-router.get("/current-user",verifyUser,getCurrentUser)
-router.get("/refresh-access-token",verifyUser,refreshAccessToken)
+router.get("/password/reset",verifyUser,resetForgottenPassword)
+router.get("/password/reset/:token",verifyUser,forgotPasswordRequest)
+router.get("/password/change",verifyUser,changeCurrentPassword)
+router.get("/me",verifyUser,getCurrentUser)
+router.get("/refresh",verifyUser,refreshAccessToken)
 router.get("/logout",verifyUser, logoutUser)
 
 export default router;

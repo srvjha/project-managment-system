@@ -8,7 +8,7 @@ const router = Router();
 
 // task routes
 router.post(
-  "/create/project/:projectId",
+  "/:pid/task/create",
   verifyUser,
   checkPermission("add_task"),
   uploadTaskAttachments,
@@ -16,7 +16,7 @@ router.post(
 );
 
 router.patch(
-    "/update/:taskId/project/:projectId",
+    "/:pid/task/:tid/update",
   verifyUser,
   checkPermission("update_task"),
   uploadTaskAttachments,
@@ -24,21 +24,21 @@ router.patch(
 )
 
 router.delete(
-  "/delete/:taskId/project/:projectId",
+  "/:pid/task/:tid/delete",
   verifyUser,
   checkPermission("delete_task"),
   deleteTask,
 )
 
 router.get(
-  "/project/:projectId",
+  "/:pid/tasks",
   verifyUser,
   checkPermission("view_tasks"),
   getTasks
 )
 
 router.get(
-  "/:taskId/project/:projectId",
+  "/:pid/task/:tid",
   verifyUser,
   checkPermission("view_tasks"),
   getTaskById
@@ -47,21 +47,21 @@ router.get(
 // subtask route
 
 router.post(
-  "/create-subtask/:taskId/project/:projectId",
+  "/:pid/task/:tid/create/subtask",
   verifyUser,
   checkPermission("add_subtask"),
   createSubTask
 )
 
 router.patch(
-  "/update-subtask/:subtaskId/project/:projectId",
+  "/:pid/subtask/:sid/update",
   verifyUser,
   checkPermission("update_subtask"),
   updateSubTask
 )
 
 router.delete(
-  "/delete-subtask/:subtaskId/project/:projectId",
+  "/:pid/subtask/:sid/delete",
   verifyUser,
   checkPermission("delete_subtask"),
   deleteSubTask
@@ -71,7 +71,7 @@ router.delete(
 // attachements
 
 router.post(
-  "/add-attachments/task/:taskId/project/:projectId",
+  "/:pid/task/:tid/attachments/add",
   verifyUser,
   checkPermission("add_attachements"),
   uploadTaskAttachments,
@@ -79,7 +79,7 @@ router.post(
 )
 
 router.delete(
-  "/delete-attachments/:aid/project/:projectId",
+  "/:pid/attachments/:aid/delete",
   verifyUser,
   checkPermission("delete_attachements"),
   deleteAttachments

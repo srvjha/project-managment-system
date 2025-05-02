@@ -6,12 +6,13 @@ import { asyncHandler } from "../utils/asynHandler";
 import { handleZodError } from "../utils/handleZodError";
 import { validateNoteData } from "../validators/notes.validation";
 import { UserInterface } from "../models/user.models";
+import { validObjectId } from "../utils/helper";
 
 const getNotes = asyncHandler(async (req, res) => {
-  const {projectId} = req.params;
+  const { pid } = req.params;
   const notes = await ProjectNote.aggregate([
     {
-      $match: { project: new mongoose.Types.ObjectId(projectId) },
+      $match: { project: new mongoose.Types.ObjectId(pid) },
     },
 
     {
@@ -39,21 +40,22 @@ const getNotes = asyncHandler(async (req, res) => {
       },
     },
   ]);
- 
+
   res
     .status(200)
-    .json(new ApiResponse(
-      200,
-      notes.length
-      ? "Notes fetched successfully"
-      : "No notes available",
-        "Notes fetched successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        notes,
+        notes.length ? "Notes fetched successfully" : "No notes available",
+      ),
+    );
 });
 
 const getNoteById = asyncHandler(async (req, res) => {
-  const noteId = req.params.noteid;
-
-  const note = await ProjectNote.findById(noteId).populate({
+  const { nid } = req.params;
+  validObjectId(nid, "Note");
+  const note = await ProjectNote.findById(nid).populate({
     path: "createdBy",
     select: "username email fullName avatar -_id",
   });
@@ -67,12 +69,12 @@ const getNoteById = asyncHandler(async (req, res) => {
   const formattedResult = {
     _id: note._id,
     content: note.content,
-    createdBy:{
+    createdBy: {
       username: createdBy.username,
       email: createdBy.email,
       fullName: createdBy.fullName,
       avatar: createdBy.avatar,
-    }
+    },
   };
 
   res
@@ -82,11 +84,11 @@ const getNoteById = asyncHandler(async (req, res) => {
 
 const createNote = asyncHandler(async (req, res) => {
   const { content } = handleZodError(validateNoteData(req.body));
-  const {projectId} = req.params;
+  const { pid } = req.params;
   const userId = req.user._id;
 
   const note = await ProjectNote.create({
-    project: projectId,
+    project: pid,
     createdBy: userId,
     content,
   });
@@ -101,15 +103,13 @@ const createNote = asyncHandler(async (req, res) => {
 
 const updateNote = asyncHandler(async (req, res) => {
   const { content } = handleZodError(validateNoteData(req.body));
-  const noteId = req.params.noteid;
+  const { nid } = req.params;
 
-  if (!mongoose.Types.ObjectId.isValid(noteId)) {
-    throw new ApiError("Invalid note ID", 400);
-  }
+  validObjectId(nid, "Note");
 
   const note = await ProjectNote.findByIdAndUpdate(
-    noteId,
-    {content},
+    nid,
+    { content },
     { new: true },
   ).select("content createdAt updatedAt");
 
@@ -121,15 +121,13 @@ const updateNote = asyncHandler(async (req, res) => {
 });
 
 const deleteNote = asyncHandler(async (req, res) => {
-  const noteId = req.params.noteid;
-  if (!mongoose.Types.ObjectId.isValid(noteId)) {
-    throw new ApiError("Invalid note ID", 400);
-  }
+  const nid = req.params.nid;
+  validObjectId(nid, "Note");
 
- const deletedNote =  await ProjectNote.findByIdAndDelete(noteId);
- if(!deletedNote){
-  throw new ApiError("Note not exist",400)
- }
+  const deletedNote = await ProjectNote.findByIdAndDelete(nid);
+  if (!deletedNote) {
+    throw new ApiError("Note not exist", 400);
+  }
 
   res.status(200).json(new ApiResponse(200, null, "Note Deleted Successfully"));
 });

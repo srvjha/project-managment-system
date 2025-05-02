@@ -21,8 +21,8 @@ import { errorHandler } from "./middlewares/error.middleware";
 app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/auth", userRouter);
 app.use("/api/v1/project",projectRouter)
-app.use("/api/v1/note",noteRouter)
-app.use("/api/v1/task",taskRouter)
+app.use("/api/v1/project",noteRouter)
+app.use("/api/v1/project",taskRouter)
 
 app.use(errorHandler);
 

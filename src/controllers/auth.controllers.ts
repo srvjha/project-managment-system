@@ -5,8 +5,11 @@ import { User } from "../models/user.models";
 import crypto from "crypto";
 import { env } from "../validators/env";
 import {
+  validateChangePassword,
   validateLoginData,
   validateRegisterData,
+  validateEmailData,
+  validateResetPassword,
 } from "../validators/user.validation";
 import { handleZodError } from "../utils/handleZodError";
 import { uploadOnCloudinary } from "../utils/cloudinary";
@@ -45,7 +48,6 @@ const register = asyncHandler(async (req, res) => {
     validateRegisterData(req.body),
   );
 
-  console.log(req.body);
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {
@@ -82,7 +84,7 @@ const register = asyncHandler(async (req, res) => {
   }
   await user.save();
 
-  const verificationUrl = `${env.BASE_URI}/api/v1/auth/verify/${unHashedToken}`;
+  const verificationUrl = `${env.BASE_URI}/api/v1/auth/verify/email/${unHashedToken}`;
 
   await sendEmail(
     user.email,
@@ -92,12 +94,19 @@ const register = asyncHandler(async (req, res) => {
 
   //  await sendVerificationMai(user.username, user.email, unHashedToken);
 
+  const {
+    password: _,
+    refreshToken: __,
+    emailVerificationToken: ___,
+    ...userInfo
+  } = user.toObject();
+
   res
     .status(201)
     .json(
       new ApiResponse(
         200,
-        user,
+        userInfo,
         "User registered successfully. Please verify your email",
       ),
     );
@@ -136,7 +145,7 @@ const loginUser = asyncHandler(async (req, res) => {
     .cookie("accessToken", accessToken, cookieOption)
     .cookie("refreshToken", refreshToken, cookieOption)
     .status(200)
-    .json(new ApiResponse(200, {}, "User logged in Successfully"));
+    .json(new ApiResponse(200, null, "User logged in Successfully"));
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
@@ -155,7 +164,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     .clearCookie("accessToken")
     .clearCookie("refreshToken")
     .status(200)
-    .json(new ApiResponse(200, {}, "User Logged Out Successfully"));
+    .json(new ApiResponse(200, null, "User Logged Out Successfully"));
 });
 
 const verifyEmail = asyncHandler(async (req, res) => {
@@ -179,15 +188,13 @@ const verifyEmail = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  res.status(200).json(new ApiResponse(200, {}, "Email verified successfully"));
+  res
+    .status(200)
+    .json(new ApiResponse(200, null, "Email verified successfully"));
 });
 
 const resendEmailVerification = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    throw new ApiError("Email is required", 400);
-  }
+  const { email } = handleZodError(validateEmailData(req.body));
 
   const user = await User.findOne({ email });
 
@@ -204,9 +211,9 @@ const resendEmailVerification = asyncHandler(async (req, res) => {
   user.emailVerificationToken = hashedToken;
   user.emailVerificationExpiry = tokenExpiry;
 
-  await user.save()
+  await user.save();
 
-  const verificationUrl = `${env.BASE_URI}/api/v1/auth/verify/${unHashedToken}`;
+  const verificationUrl = `${env.BASE_URI}/api/v1/auth/verify/email/${unHashedToken}`;
 
   await sendEmail(
     user.email,
@@ -219,21 +226,26 @@ const resendEmailVerification = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        {},
+        null,
         "Verification link sent successfully. Check Inbox",
       ),
     );
 });
 
 const resetForgottenPassword = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-  if (!email) {
-    throw new ApiError("Email is required", 400);
-  }
-  const user = await User.findOne({ email });
+  const { email } = handleZodError(validateEmailData(req.body));
 
+  const user = await User.findOne({ email });
   if (!user) {
-    throw new ApiError("User not found", 400);
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          null,
+          "If an account exists, a reset link has been sent to the email",
+        ),
+      );
   }
 
   const { hashedToken, tokenExpiry, unHashedToken } = user.generateToken();
@@ -241,7 +253,7 @@ const resetForgottenPassword = asyncHandler(async (req, res) => {
   user.forgotPasswordToken = hashedToken;
   user.forgotPasswordExpiry = tokenExpiry;
 
-  const verificationUrl = `${env.BASE_URI}/api/v1/auth/verify/${unHashedToken}`;
+  const verificationUrl = `${env.BASE_URI}/api/v1/auth/password/reset/${unHashedToken}`;
 
   await sendEmail(
     user.email,
@@ -254,7 +266,7 @@ const resetForgottenPassword = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        {},
+        null,
         "Reset password link sent successfully. Check Inbox",
       ),
     );
@@ -264,23 +276,20 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken = req.cookies.refreshToken;
 
   if (!incomingRefreshToken) {
-    throw new ApiError("Unauthorized Request",400)
+    throw new ApiError("Unauthorized Request", 400);
   }
 
   let decodedToken: any;
   try {
     decodedToken = jwt.verify(incomingRefreshToken, env.REFRESH_TOKEN_SECRET);
   } catch (error) {
-    throw new ApiError(
-      "Invalid or expired refresh token",
-      400
-    );
+    throw new ApiError("Invalid or expired refresh token", 400);
   }
 
   const user = await User.findById(decodedToken._id);
 
   if (!user) {
-     throw new ApiError("Invalid Refresh Token", 400);
+    throw new ApiError("Invalid Refresh Token", 400);
   }
 
   if (incomingRefreshToken !== user.refreshToken) {
@@ -293,21 +302,21 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   };
 
   const { accessToken, refreshToken: newRefreshToken } =
-    await generateAccessAndRefreshToken(user._id  as mongoose.Types.ObjectId);
+    await generateAccessAndRefreshToken(user._id as mongoose.Types.ObjectId);
 
   res
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", newRefreshToken, options)
-    .json(new ApiResponse(200, {}, "Token Refreshed Successfully"));
+    .json(new ApiResponse(200, null, "Token Refreshed Successfully"));
 });
 
 const forgotPasswordRequest = asyncHandler(async (req, res) => {
-  const token = req.params.token;
-  const { newPassword } = req.body;
+  const { token } = req.params;
+  const { newPassword } = handleZodError(validateResetPassword(req.body));
 
-  if (!token || !newPassword) {
-    throw new ApiError("Missing fields required", 400);
+  if (!token) {
+    throw new ApiError("token required", 400);
   }
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
   const user = await User.findOne({
@@ -326,11 +335,13 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .json(new ApiResponse(200, {}, " Password reset successfully"));
+    .json(new ApiResponse(200, null, " Password reset successfully"));
 });
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
-  const { oldPassword, newPassword } = req.body;
+  const { oldPassword, newPassword } = handleZodError(
+    validateChangePassword(req.body),
+  );
   const user = req.user;
   if (!oldPassword || !newPassword) {
     throw new ApiError("Missing fields required", 400);
@@ -348,18 +359,22 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
   await user.save();
   res
     .status(200)
-    .json(new ApiResponse(200, {}, "New Password changed successfully"));
+    .json(new ApiResponse(200, null, "New Password changed successfully"));
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
-  const user = req.user;
-  if (!user) {
+  const userId = req.user._id;
+
+  const userInfo = await User.findById(userId).select(
+    "fullName username email avatar.url -_id",
+  );
+  if (!userInfo) {
     throw new ApiError("User not found", 400);
   }
   res
     .status(200)
     .json(
-      new ApiResponse(200, user, "Current User Data Fetched Successfully!"),
+      new ApiResponse(200, userInfo, "Current User Data Fetched Successfully!"),
     );
 
   //validation

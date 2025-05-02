@@ -5,7 +5,6 @@ import { handleZodError } from "../utils/handleZodError";
 import {
   validateAddProjectMemberData,
   validateCreateProjectData,
-  validateRemoveProjectMemberData,
   validateUpdateProjectData,
 } from "../validators/project.validation";
 import { ApiResponse } from "../utils/ApiResponse";
@@ -13,6 +12,8 @@ import { ProjectMember } from "../models/projectmember.models";
 import { UserRolesEnum } from "../utils/constants";
 import { ApiError } from "../utils/ApiError";
 import { User, UserInterface } from "../models/user.models";
+import { validObjectId } from "../utils/helper";
+import logger from "../utils/logger";
 
 const getProjects = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -53,7 +54,7 @@ const getProjects = asyncHandler(async (req, res) => {
     {
       $project: {
         _id: 0,
-        projectId: "$projectData._id",
+        pid: "$projectData._id",
         name: "$projectData.name",
         description: "$projectData.description",
         createdBy: {
@@ -65,27 +66,24 @@ const getProjects = asyncHandler(async (req, res) => {
       },
     },
   ]);
-  res.status(200).json(
-    new ApiResponse(
-      200,
-      projects,
-      projects.length
-        ? "Projects fetched successfully"
-        : "No projects available",
-      
-    ),
-  );
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        projects,
+        projects.length
+          ? "Projects fetched successfully"
+          : "No projects available",
+      ),
+    );
 });
 
 const getProjectById = asyncHandler(async (req, res) => {
-  const {projectId} = req.params;
-  // const project = await Project.findById(projectId)
-  //   .populate({ path: "createdBy", select: "username email -_id" })
-  //   .select("name description createdBy updatedAt");
-
+  const { pid } = req.params;
   const project = await Project.aggregate([
     {
-      $match: { _id: new mongoose.Types.ObjectId(projectId) },
+      $match: { _id: new mongoose.Types.ObjectId(pid) },
     },
     {
       $lookup: {
@@ -162,27 +160,20 @@ const getProjectById = asyncHandler(async (req, res) => {
     },
   ]);
 
-  if(!project){
-    throw new ApiError("Project not found",400)
+  if (!project) {
+    throw new ApiError("Project not found", 400);
   }
 
-  res.status(200).json(
-    new ApiResponse(
-      200,
-      project,
-      "Project fetched successfully",
-    ),
-  );
+  res
+    .status(200)
+    .json(new ApiResponse(200, project, "Project fetched successfully"));
 });
 
 const createProject = asyncHandler(async (req, res) => {
   const { name, description } = handleZodError(
     validateCreateProjectData(req.body),
   );
-  console.log("description ", description);
   const createdBy = req.user._id;
-
-
 
   // here want to use transaction
   const clientSession = await mongoose.startSession();
@@ -213,24 +204,19 @@ const createProject = asyncHandler(async (req, res) => {
       { session: clientSession },
     );
     await clientSession.commitTransaction();
-  } catch (error:any) {
+  } catch (error: any) {
     await clientSession.abortTransaction();
-    if(error.code === 11000){
-      throw new ApiError("Project name must be unique per user",400)
+    logger.error(`Error occurred while creating project: ${error}`);
+    if (error.code === 11000) {
+      throw new ApiError("Project name must be unique per user", 400);
     }
     throw new ApiError(`Error while creating user ${error.message}`, 500);
   } finally {
     await clientSession.endSession();
   }
-  res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        project: createdProject,
-      },
-      "Project created successfully",
-    ),
-  );
+  res
+    .status(200)
+    .json(new ApiResponse(200, createdProject, "Project created successfully"));
 });
 
 const updateProject = asyncHandler(async (req, res) => {
@@ -244,41 +230,46 @@ const updateProject = asyncHandler(async (req, res) => {
   if (description !== "") {
     updatePayload.description = description;
   }
-  console.log("updatePayload: ", updatePayload);
-  const {projectId} = req.params;
-  await Project.findByIdAndUpdate(
+  const { pid } = req.params;
+  const updatedProject = await Project.findByIdAndUpdate(
     {
-      _id: projectId,
+      _id: pid,
     },
     updatePayload,
     {
       new: true,
     },
   );
+
+  if (!updatedProject) {
+    throw new ApiError("Failed to update the project", 400);
+  }
   res
     .status(200)
-    .json(new ApiResponse(200, null, "Project updated successfully."));
+    .json(
+      new ApiResponse(200, updatedProject, "Project updated successfully."),
+    );
 });
 
 const deleteProject = asyncHandler(async (req, res) => {
-  const {projectId} = req.params;
+  const { pid } = req.params;
   const clientSession = await mongoose.startSession();
   clientSession.startTransaction();
   try {
-    await Project.findByIdAndDelete(projectId, {
+    await Project.findByIdAndDelete(pid, {
       session: clientSession,
     });
     await ProjectMember.deleteMany(
-      { project: projectId },
+      { project: pid },
       {
         session: clientSession,
       },
     );
     await clientSession.commitTransaction();
-  } catch (error) {
+  } catch (error: any) {
     await clientSession.abortTransaction();
-    console.log("error: ", error);
-    throw new ApiError("Error deleting project", 500);
+    logger.error(`Error while deleting project: ${error}`);
+    throw new ApiError(`Error while deleting project: ${error.message}`, 500);
   } finally {
     await clientSession.endSession();
   }
@@ -288,9 +279,9 @@ const deleteProject = asyncHandler(async (req, res) => {
 });
 
 const getProjectMembers = asyncHandler(async (req, res) => {
-  const {projectId} = req.params;
+  const { pid } = req.params;
   const projectMembers = await ProjectMember.find({
-    project: projectId,
+    project: pid,
   })
     .populate({ path: "user", select: "username email fullName avatar -_id" })
     .select("role updatedAt");
@@ -322,10 +313,9 @@ const addMemberToProject = asyncHandler(async (req, res) => {
   const { email, role } = handleZodError(
     validateAddProjectMemberData(req.body),
   );
-  const {projectId} = req.params;
+  const { pid } = req.params;
 
   const user = await User.findOne({ email });
-  console.log("user: ", user);
   if (!user) {
     throw new ApiError("User not found", 404);
   }
@@ -334,7 +324,7 @@ const addMemberToProject = asyncHandler(async (req, res) => {
   // checking if the member is already added or not
   const existingMember = await ProjectMember.findOne({
     user: userId,
-    project: projectId,
+    project: pid,
   });
   if (existingMember) {
     throw new ApiError("Member already added to the project", 500);
@@ -342,75 +332,58 @@ const addMemberToProject = asyncHandler(async (req, res) => {
 
   const newMember = await ProjectMember.create({
     user: userId,
-    project: projectId,
+    project: pid,
     role,
   });
-
-  res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        member: newMember,
-      },
-      "Member added to project successfully",
-    ),
-  );
-});
-
-const deleteMember = asyncHandler(async (req, res) => {
-  const { email } = handleZodError(validateRemoveProjectMemberData(req.body));
-  const {projectId} = req.params;
-
-  const user = await User.findOne({ email });
-
-  if (!user) {
-    throw new ApiError("User not member of this project", 400);
-  }
-  const deleteMember = await ProjectMember.findOneAndDelete({
-    user: user._id,
-    project: projectId,
-  });
-  if (!deleteMember) {
-    throw new ApiError("Member not found", 404);
-  }
-  res.status(200).json(new ApiResponse(200, {}, "Member deleted successfully"));
-});
-
-const updateMemberRole = asyncHandler(async (req, res) => {
-  const { email, role } = handleZodError(
-    validateAddProjectMemberData(req.body),
-  );
-  const {projectId} = req.params;
-
-  const user = await User.findOne({ email });
-  if (!user) {
-    throw new ApiError("User not found", 404);
-  }
-
-  const projectMember = await ProjectMember.findOne({
-    user: user._id,
-    project: projectId,
-  });
-
-  if (!projectMember) {
-    throw new ApiError("User is not a member of this project", 400);
-  }
-
-  if (projectMember.role === role) {
-    throw new ApiError(`User already has the role: ${role}`, 400);
-  }
-
-  projectMember.role = role;
-  await projectMember.save();
 
   res
     .status(200)
     .json(
-      new ApiResponse(
-        200,
-        { member: projectMember },
-        "Member role updated successfully",
-      ),
+      new ApiResponse(200, newMember, "Member added to project successfully"),
+    );
+});
+
+const deleteMember = asyncHandler(async (req, res) => {
+  const { mid } = req.params;
+  validObjectId(mid, "Member");
+
+  const deleteMember = await ProjectMember.findByIdAndDelete(mid);
+  if (!deleteMember) {
+    throw new ApiError("Member not found", 404);
+  }
+  res
+    .status(200)
+    .json(new ApiResponse(200, null, "Member deleted successfully"));
+});
+
+const updateMemberRole = asyncHandler(async (req, res) => {
+  const { role } = handleZodError(validateAddProjectMemberData(req.body));
+  const { mid } = req.params;
+  const memberExist = await ProjectMember.findById(mid);
+
+  if (!memberExist) {
+    throw new ApiError("Member not found", 400);
+  }
+
+  if (memberExist.role === role) {
+    throw new ApiError(`User already has the role: ${role}`, 400);
+  }
+
+  const projectMember = await ProjectMember.findByIdAndUpdate(
+    mid,
+    { role },
+    {
+      new: true,
+    },
+  );
+  if (!projectMember) {
+    throw new ApiError("Failed to update", 400);
+  }
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, projectMember, "Member role updated successfully"),
     );
 });
 
