@@ -1,9 +1,9 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 interface ProjectNoteSchema extends Document {
-  project:Schema.Types.ObjectId,
-  createdBy:Schema.Types.ObjectId,
-  content:string
+  project: Schema.Types.ObjectId;
+  createdBy: Schema.Types.ObjectId;
+  content: string;
 }
 const projectNoteSchema = new Schema<ProjectNoteSchema>(
   {

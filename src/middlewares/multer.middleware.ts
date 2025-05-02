@@ -3,10 +3,7 @@ import path from "path";
 import { ApiError } from "../utils/ApiError";
 import { allowedMimeTypes } from "../utils/constants";
 
-
-
 const storage = multer.diskStorage({
-  
   destination: function (req, res, cb) {
     cb(null, "./public/uploads");
   },
@@ -17,8 +14,6 @@ const storage = multer.diskStorage({
     cb(null, `${file.fieldname}-${uniqueSuffix}${extention}`);
   },
 });
-
-
 
 export const upload = multer({
   storage,
@@ -31,7 +26,7 @@ const fileFilter: multer.Options["fileFilter"] = (req, file, cb) => {
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new ApiError("Unsupported file type",500));
+    cb(new ApiError("Unsupported file type", 500));
   }
 };
 
@@ -39,7 +34,4 @@ export const uploadTaskAttachments = multer({
   storage,
   fileFilter,
   limits: { fileSize: 10000 * 1024 * 1024 },
-}).array("attachments",5);
-
-
-
+}).array("attachments", 5);

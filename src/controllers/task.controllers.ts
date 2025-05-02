@@ -17,6 +17,7 @@ import { SubTask } from "../models/subtask.models";
 import { env } from "../validators/env";
 import { validObjectId } from "../utils/helper";
 import logger from "../utils/logger";
+import fs from "fs";
 
 const getTasks = asyncHandler(async (req, res) => {
   const { pid } = req.params;
@@ -287,6 +288,7 @@ const addAttachments = asyncHandler(async (req, res) => {
   const newAttachments = attachments.length;
 
   if (existingAttachments + newAttachments > env.MAX_ATTACHMENTS) {
+    attachments.forEach((file) => fs.unlinkSync(file.path));
     throw new ApiError(
       `Attachment limit exceeded. You can upload only ${env.MAX_ATTACHMENTS - existingAttachments} more.`,
       400,

@@ -11,5 +11,5 @@
     "removeComments": true,
     "forceConsistentCasingInFileNames": true,
     "noEmitOnError": true
-  },
+  }
 }

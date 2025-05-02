@@ -6,7 +6,7 @@ const errorHandler = (
   err: any,
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   let customError: ApiError;
 
@@ -17,10 +17,7 @@ const errorHandler = (
   //  MongoDB duplicate key error
   else if (err.code === 11000) {
     const field = Object.keys(err.keyValue)[0];
-    customError = new ApiError(
-      `Duplicate value for field: ${field}`,
-      400 
-    );
+    customError = new ApiError(`Duplicate value for field: ${field}`, 400);
   }
   //  other errors
   else {

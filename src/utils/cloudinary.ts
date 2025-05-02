@@ -17,11 +17,11 @@ const uploadOnCloudinary = async (localFilePath: string) => {
       resource_type: "auto",
     });
     logger.info("File is Uploaded Succesfully on CLoudnary!!!", response.url);
-     fs.unlinkSync(localFilePath);
+    fs.unlinkSync(localFilePath);
     return response;
   } catch (error) {
-     fs.unlinkSync(localFilePath); // remove the locally saved temporary file as the upload operation got failed
-    throw new ApiError("Failed to upload on cloudinary",500)
+    fs.unlinkSync(localFilePath); // remove the locally saved temporary file as the upload operation got failed
+    throw new ApiError("Failed to upload on cloudinary", 500);
   }
 };
 

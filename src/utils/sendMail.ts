@@ -1,11 +1,13 @@
 import Mailgen from "mailgen";
 import nodemailer from "nodemailer";
 import { env } from "../validators/env";
-import logger from "./logger"
+import logger from "./logger";
 
-
-const sendEmail = async (email:string,subject:string,content:Mailgen.Content) => {
- 
+const sendEmail = async (
+  email: string,
+  subject: string,
+  content: Mailgen.Content,
+) => {
   const mailGenerator = new Mailgen({
     theme: "default",
     product: {
@@ -14,12 +16,11 @@ const sendEmail = async (email:string,subject:string,content:Mailgen.Content) =>
     },
   });
 
- 
   const emailTextual = mailGenerator.generatePlaintext(content);
   const emailHtml = mailGenerator.generate(content);
 
   const transporter = nodemailer.createTransport({
-    host: env.MAILTRAP_SMTP_HOST  ,
+    host: env.MAILTRAP_SMTP_HOST,
     port: env.MAILTRAP_SMTP_PORT,
     auth: {
       user: env.MAILTRAP_SMTP_USER,
@@ -28,16 +29,16 @@ const sendEmail = async (email:string,subject:string,content:Mailgen.Content) =>
   });
 
   const mail = {
-    from: "mail.taskmanager@example.com", 
-    to: email, 
-    subject: subject, 
-    text: emailTextual, 
-    html: emailHtml, 
+    from: "mail.taskmanager@example.com",
+    to: email,
+    subject: subject,
+    text: emailTextual,
+    html: emailHtml,
   };
 
   try {
     await transporter.sendMail(mail);
-  } catch (error:any) {
+  } catch (error: any) {
     logger.warn(
       "Email service failed silently. Make sure you have provided your MAILTRAP credentials in the .env file",
     );
@@ -45,8 +46,10 @@ const sendEmail = async (email:string,subject:string,content:Mailgen.Content) =>
   }
 };
 
-
-const emailVerificationMailgenContent = (username:string, verificationUrl:string) => {
+const emailVerificationMailgenContent = (
+  username: string,
+  verificationUrl: string,
+) => {
   return {
     body: {
       name: username,
@@ -66,8 +69,10 @@ const emailVerificationMailgenContent = (username:string, verificationUrl:string
   };
 };
 
-
-const forgotPasswordMailgenContent = (username:string, passwordResetUrl:string) => {
+const forgotPasswordMailgenContent = (
+  username: string,
+  passwordResetUrl: string,
+) => {
   return {
     body: {
       name: username,

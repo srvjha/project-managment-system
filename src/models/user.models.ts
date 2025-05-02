@@ -21,7 +21,7 @@ export interface UserInterface extends Document {
   emailVerificationToken?: string;
   emailVerificationExpiry?: Date;
   isPasswordCorrect: (password: string) => Promise<boolean>;
-  generateToken:()=> {
+  generateToken: () => {
     unHashedToken: string;
     hashedToken: string;
     tokenExpiry: Date;
@@ -149,7 +149,5 @@ userSchema.methods.generateTemporaryToken = function () {
 
   return { unHashedToken, hashedToken, tokenExpiry };
 };
-
-
 
 export const User = mongoose.model("User", userSchema);

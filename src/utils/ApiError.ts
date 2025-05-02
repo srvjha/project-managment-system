@@ -1,7 +1,10 @@
 class ApiError extends Error {
   data: any;
   success: boolean;
-  constructor( message: string,public statusCode: number) {
+  constructor(
+    message: string,
+    public statusCode: number,
+  ) {
     super(message);
     this.data = null;
     this.success = false;

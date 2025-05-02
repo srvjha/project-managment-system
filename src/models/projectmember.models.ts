@@ -1,10 +1,14 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { AvailableUserRoles, UserRolesEnum,UserRolesEnumType } from "../utils/constants";
+import {
+  AvailableUserRoles,
+  UserRolesEnum,
+  UserRolesEnumType,
+} from "../utils/constants";
 
-interface ProjectMemberInterface extends Document{
-  user:Schema.Types.ObjectId,
-  project:Schema.Types.ObjectId,
-  role:UserRolesEnumType
+interface ProjectMemberInterface extends Document {
+  user: Schema.Types.ObjectId;
+  project: Schema.Types.ObjectId;
+  role: UserRolesEnumType;
 }
 const projectMemberSchema = new Schema<ProjectMemberInterface>(
   {

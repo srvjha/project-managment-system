@@ -7,10 +7,12 @@ const taskSchema = z.object({
   email: z.string().trim().email({ message: "Email is required" }),
 });
 
-const subTaskSchema = taskSchema.pick({title:true})
-const updateSubTaskSchema = subTaskSchema.extend({
-  isCompleted:z.boolean()
-}).partial()
+const subTaskSchema = taskSchema.pick({ title: true });
+const updateSubTaskSchema = subTaskSchema
+  .extend({
+    isCompleted: z.boolean(),
+  })
+  .partial();
 
 const updateTaskSchema = taskSchema
   .extend({
@@ -26,8 +28,8 @@ const updateTaskSchema = taskSchema
 // types
 type TaskData = z.infer<typeof taskSchema>;
 type UpdateTaskData = z.infer<typeof updateTaskSchema>;
-type SubTaskData = z.infer<typeof subTaskSchema>
-type UpdateSubTaskData = z.infer<typeof updateSubTaskSchema>
+type SubTaskData = z.infer<typeof subTaskSchema>;
+type UpdateSubTaskData = z.infer<typeof updateSubTaskSchema>;
 
 const validateTaskData = (data: TaskData) => {
   return taskSchema.safeParse(data);
@@ -37,12 +39,17 @@ const validateUpdateTaskData = (data: UpdateTaskData) => {
   return updateTaskSchema.safeParse(data);
 };
 
-const validateSubTaskData = (data:SubTaskData) =>{
-  return subTaskSchema.safeParse(data)
-}
+const validateSubTaskData = (data: SubTaskData) => {
+  return subTaskSchema.safeParse(data);
+};
 
-const validateUpdateSubTaskData = (data:UpdateSubTaskData)=>{
-  return updateSubTaskSchema.safeParse(data)
-}
+const validateUpdateSubTaskData = (data: UpdateSubTaskData) => {
+  return updateSubTaskSchema.safeParse(data);
+};
 
-export { validateTaskData, validateUpdateTaskData,validateSubTaskData,validateUpdateSubTaskData };
+export {
+  validateTaskData,
+  validateUpdateTaskData,
+  validateSubTaskData,
+  validateUpdateSubTaskData,
+};

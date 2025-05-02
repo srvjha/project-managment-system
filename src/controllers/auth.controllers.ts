@@ -93,7 +93,6 @@ const register = asyncHandler(async (req, res) => {
     emailVerificationMailgenContent(user.username, verificationUrl),
   );
 
-
   const {
     password: _,
     refreshToken: __,
@@ -376,7 +375,6 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(200, userInfo, "Current User Data Fetched Successfully!"),
     );
-
 });
 
 export {
