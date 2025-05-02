@@ -1,6 +1,7 @@
 import Mailgen from "mailgen";
 import nodemailer from "nodemailer";
 import { env } from "../validators/env";
+import logger from "./logger"
 
 
 const sendEmail = async (email:string,subject:string,content:Mailgen.Content) => {
@@ -36,13 +37,11 @@ const sendEmail = async (email:string,subject:string,content:Mailgen.Content) =>
 
   try {
     await transporter.sendMail(mail);
-  } catch (error) {
-    // As sending email is not strongly coupled to the business logic it is not worth to raise an error when email sending fails
-    // So it's better to fail silently rather than breaking the app
-    console.error(
+  } catch (error:any) {
+    logger.warn(
       "Email service failed silently. Make sure you have provided your MAILTRAP credentials in the .env file",
     );
-    console.error("Error: ", error);
+    logger.error("Error: ", error);
   }
 };
 

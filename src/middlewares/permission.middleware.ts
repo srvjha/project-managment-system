@@ -24,7 +24,7 @@ export const checkPermission = (action: ActionsEnumType) => {
       try {
         const allowedActions = canUserPerformAction(userMember.role, action);
         if (!allowedActions) {
-          throw new ApiError("Access Denied", 400);
+          throw new ApiError("Access Denied", 403);
         }
         next();
       } catch (error) {

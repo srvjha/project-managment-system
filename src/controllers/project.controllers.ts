@@ -316,9 +316,9 @@ const addMemberToProject = asyncHandler(async (req, res) => {
   );
   const { pid } = req.params;
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email, isEmailVerified: true });
   if (!user) {
-    throw new ApiError("User not found", 404);
+    throw new ApiError("Either member does not exist or not verified yet", 400);
   }
 
   const userId = user._id;
@@ -360,7 +360,7 @@ const deleteMember = asyncHandler(async (req, res) => {
 const updateMemberRole = asyncHandler(async (req, res) => {
   const { role } = handleZodError(validateUpdateMemberData(req.body));
   const { mid } = req.params;
-  validObjectId(mid,"Member")
+  validObjectId(mid, "Member");
   const memberExist = await ProjectMember.findById(mid);
 
   if (!memberExist) {

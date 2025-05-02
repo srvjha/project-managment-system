@@ -21,6 +21,7 @@ import {
 import mongoose from "mongoose";
 
 import jwt from "jsonwebtoken";
+import logger from "../utils/logger";
 
 const generateAccessAndRefreshToken = async (
   userId: mongoose.Types.ObjectId,
@@ -38,7 +39,7 @@ const generateAccessAndRefreshToken = async (
     await user.save({ validateBeforeSave: false });
     return { accessToken, refreshToken };
   } catch (error) {
-    console.log("Generate Access and Refresh Token Error: ", error);
+    logger.error("Generate Access and Refresh Token Error: ", error);
     throw new ApiError("Internal Server Down", 500);
   }
 };
@@ -92,7 +93,6 @@ const register = asyncHandler(async (req, res) => {
     emailVerificationMailgenContent(user.username, verificationUrl),
   );
 
-  //  await sendVerificationMai(user.username, user.email, unHashedToken);
 
   const {
     password: _,
@@ -377,7 +377,6 @@ const getCurrentUser = asyncHandler(async (req, res) => {
       new ApiResponse(200, userInfo, "Current User Data Fetched Successfully!"),
     );
 
-  //validation
 });
 
 export {

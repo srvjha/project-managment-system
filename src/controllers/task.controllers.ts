@@ -1,6 +1,6 @@
-import mongoose, { BooleanExpression } from "mongoose";
+import mongoose from "mongoose";
 import { ProjectMember } from "../models/projectmember.models";
-import { Attachment, Task, TaskInterface } from "../models/task.models";
+import { Attachment, Task } from "../models/task.models";
 import { User } from "../models/user.models";
 import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
@@ -77,7 +77,6 @@ const getTasks = asyncHandler(async (req, res) => {
     );
 });
 
-// get task by id
 const getTaskById = asyncHandler(async (req, res) => {
   const { tid } = req.params;
   validObjectId(tid, "Task");
@@ -141,21 +140,12 @@ const getTaskById = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, task, "Task fetched Successfully"));
 });
 
-//create task
-
 const createTask = asyncHandler(async (req, res) => {
-  // create task
-
   const { title, description, email } = handleZodError(
     validateTaskData(req.body),
   );
   const { pid } = req.params;
   const userId = req.user._id;
-
-  const existingTask = await Task.findOne({ title, project: pid });
-  if (existingTask) {
-    throw new ApiError("Task already Exists", 400);
-  }
 
   const assignedToUser = await User.findOne({ email });
   if (!assignedToUser) {
@@ -198,31 +188,12 @@ const createTask = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, task, "Task Created Successfully"));
 });
 
-// update task
 const updateTask = asyncHandler(async (req, res) => {
   const { title, description, email, status } = handleZodError(
     validateUpdateTaskData(req.body),
   );
   const { pid, tid } = req.params;
   validObjectId(tid, "Task");
-
-  const existingTask = await Task.findById(tid);
-  if (!existingTask) {
-    throw new ApiError("Task not found", 404);
-  }
-
-  const assignedToUser = await User.findOne({ email });
-  if (!assignedToUser) {
-    throw new ApiError("Assigned User not found", 400);
-  }
-  const isProjectMember = await ProjectMember.findOne({
-    user: assignedToUser._id,
-    project: pid,
-  });
-
-  if (!isProjectMember) {
-    throw new ApiError("Assigned User not a member of this project", 400);
-  }
 
   const updatePayload: Partial<{
     title: string;
@@ -233,8 +204,23 @@ const updateTask = asyncHandler(async (req, res) => {
 
   if (title !== undefined) updatePayload.title = title;
   if (description !== "") updatePayload.description = description;
-  if (email !== undefined)
+  if (email !== undefined) {
+    const assignedToUser = await User.findOne({ email });
+    if (!assignedToUser) {
+      throw new ApiError("Assigned User not found", 400);
+    }
+    const isProjectMember = await ProjectMember.findOne({
+      user: assignedToUser._id,
+      project: pid,
+    });
+
+    if (!isProjectMember) {
+      throw new ApiError("Assigned User not a member of this project", 400);
+    }
+
     updatePayload.assignedTo = assignedToUser._id as string;
+  }
+
   if (status !== undefined) updatePayload.status = status;
 
   if (Object.keys(updatePayload).length === 0) {
@@ -246,7 +232,7 @@ const updateTask = asyncHandler(async (req, res) => {
   });
 
   if (!updateTask) {
-    throw new ApiError("Failed to update", 400);
+    throw new ApiError("Task does not exist", 400);
   }
 
   res
@@ -254,7 +240,6 @@ const updateTask = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, updateTask, "Task Updated Successfully"));
 });
 
-// delete task
 const deleteTask = asyncHandler(async (req, res) => {
   const { tid } = req.params;
   validObjectId(tid, "Task");
@@ -293,8 +278,6 @@ const addAttachments = asyncHandler(async (req, res) => {
   if (!task) {
     throw new ApiError("Task not found", 400);
   }
-
-  console.log("task attachments", task.attachments?.length);
 
   if (!attachments || attachments.length === 0) {
     throw new ApiError("Please add attachments", 400);
@@ -349,7 +332,6 @@ const deleteAttachments = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "Attachment Deleted Successfully"));
 });
 
-// create subtask
 const createSubTask = asyncHandler(async (req, res) => {
   const { title } = handleZodError(validateSubTaskData(req.body));
   const { tid, pid } = req.params;
@@ -361,15 +343,6 @@ const createSubTask = asyncHandler(async (req, res) => {
 
   if (!existingTask) {
     throw new ApiError("Task not found", 400);
-  }
-  const existingSubtask = await SubTask.findOne({
-    title,
-    task: tid,
-    project: pid,
-  });
-
-  if (existingSubtask) {
-    throw new ApiError("SubTask with Same Title already exists", 400);
   }
 
   const subtask = await SubTask.create({
@@ -388,7 +361,6 @@ const createSubTask = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, subtask, "SubTask Created Successfully"));
 });
 
-// update subtask
 const updateSubTask = asyncHandler(async (req, res) => {
   const { title, isCompleted } = handleZodError(
     validateUpdateSubTaskData(req.body),
@@ -396,11 +368,6 @@ const updateSubTask = asyncHandler(async (req, res) => {
   const { sid } = req.params;
 
   validObjectId(sid, "SubTask");
-  const existingSubtask = await SubTask.findById(sid);
-
-  if (!existingSubtask) {
-    throw new ApiError("SubTask not exists", 400);
-  }
 
   const updatePayload: Partial<{
     title: string;
@@ -427,7 +394,6 @@ const updateSubTask = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, updateSubTask, "SubTask updated successfully"));
 });
 
-// delete subtask
 const deleteSubTask = asyncHandler(async (req, res) => {
   const { sid } = req.params;
   validObjectId(sid, "SubTask");
