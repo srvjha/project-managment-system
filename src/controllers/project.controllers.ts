@@ -5,6 +5,7 @@ import { handleZodError } from "../utils/handleZodError";
 import {
   validateAddProjectMemberData,
   validateCreateProjectData,
+  validateUpdateMemberData,
   validateUpdateProjectData,
 } from "../validators/project.validation";
 import { ApiResponse } from "../utils/ApiResponse";
@@ -357,8 +358,9 @@ const deleteMember = asyncHandler(async (req, res) => {
 });
 
 const updateMemberRole = asyncHandler(async (req, res) => {
-  const { role } = handleZodError(validateAddProjectMemberData(req.body));
+  const { role } = handleZodError(validateUpdateMemberData(req.body));
   const { mid } = req.params;
+  validObjectId(mid,"Member")
   const memberExist = await ProjectMember.findById(mid);
 
   if (!memberExist) {
