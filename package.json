@@ -4,11 +4,12 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "start": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "dev-start": "ts-node-dev --respawn --transpile-only src/index.ts",
     "format": "prettier . --write",
     "build": "tsc",
     "swagger": "node src/swagger.js",
-    "generate-docs": "npm run build && npm run swagger"
+    "generate-docs": "npm run build && npm run swagger",
+    "start":"node dist/index.js"
   },
   "keywords": [],
   "author": "",

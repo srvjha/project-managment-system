@@ -5,7 +5,7 @@ const doc = {
     title: 'KatyaSetu',
     description: 'A seamless bridge between ideas and execution. KaryaSetu helps teams collaborate, plan, and deliver projects efficiently – all in one place'
   },
-  host: 'localhost:3000'
+  host: 'https://project-managment-system-98zc.onrender.com'
 };
 
 const outputFile = './swagger-output.json';

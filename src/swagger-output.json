@@ -5,10 +5,10 @@
     "description": "A seamless bridge between ideas and execution. KaryaSetu helps teams collaborate, plan, and deliver projects efficiently – all in one place",
     "version": "1.0.0"
   },
-  "host": "localhost:3000",
+  "host": "project-managment-system-98zc.onrender.com",
   "basePath": "/",
   "schemes": [
-    "http"
+    "https"
   ],
   "paths": {
     "/register": {
